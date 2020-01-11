@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -15,25 +16,25 @@ var usage = `gosubmod is a tool that simplifies working with Go submodules.
 
 Usage:
 
-	gosubmod <command> packages
+	gosubmod <command> [arguments] submodules
 
 The commands are:
 
-	add     add "replace" directives with relative paths for all submodules
-	drop    drop "replace" directives with relative paths for all submodules
+	list    list all the recognized submodules
+	add     add "replace" directives with relative paths for submodules
+	drop    drop "replace" directives with relative paths for submodules
 
 `
 
 type command func(*submod.File, []string) error
 
 func main() {
-	var (
-		cmd     command
-		modules []string
-	)
+	var cmd command
 	// interpret provided arguments
 	if len(os.Args) >= 2 {
 		switch os.Args[1] {
+		case "list":
+			cmd = listCmd
 		case "add":
 			cmd = addCmd
 		case "drop":
@@ -62,6 +63,7 @@ func main() {
 	// Execute the command with the submodules.
 	// If there are no submodules provided,
 	// select all detected ones.
+	var modules []string
 	if len(os.Args) > 2 {
 		modules = os.Args[2:]
 	}
@@ -72,6 +74,18 @@ func main() {
 
 func usageCmd() {
 	fmt.Fprint(os.Stderr, usage)
+}
+
+func listCmd(f *submod.File, _ []string) error {
+	submodules := f.Submodules()
+	w := bufio.NewWriter(os.Stdout)
+	for _, m := range submodules {
+		_, err := fmt.Fprintf(w, "%s\n", m)
+		if err != nil {
+			return err
+		}
+	}
+	return w.Flush()
 }
 
 func addCmd(f *submod.File, modules []string) error {

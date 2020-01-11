@@ -10,6 +10,22 @@ import (
 	"golang.org/x/mod/module"
 )
 
+type FileError struct {
+	Filepath string
+	Modules  []string
+	Err      error
+}
+
+func (e *FileError) Error() string {
+	return fmt.Sprintf(`file error for path "%s" with modules %+v: %v`, e.Filepath, e.Modules, e.Err)
+}
+
+func (e *FileError) Unwrap() error {
+	return e.Err
+}
+
+type Version = module.Version
+
 // File is an extension over modfile.File which supports submodules.
 // Submodule is defined as a nested module, i.e. having a parent directory
 // which is a Go module.
@@ -23,15 +39,38 @@ type File struct {
 	Strict bool
 }
 
+// Submodules returns a list of submodule paths.
+func (f *File) Submodules() (result []string) {
+	for _, s := range f.submodules() {
+		result = append(result, s.Mod.String())
+	}
+	return
+}
+
+func (f *File) versions() (result []Version) {
+	for _, s := range f.submodules() {
+		result = append(result, s.Mod)
+	}
+	return
+}
+
+func (f *File) parseModules(modules []string) (modVersions, error) {
+	if len(modules) == 0 {
+		return f.versions(), nil
+	}
+	return parseModules(modules)
+}
+
 // AddSubmoduleReplaces adds "replace" directives for all detected submodules.
 // All added replaces are relative paths pointing at the found child directories.
 func (f *File) AddSubmoduleReplaces(modules ...string) error {
-	if len(modules) == 0 {
-		modules = f.Submodules()
-	}
-	versions, err := parseModules(modules)
+	versions, err := f.parseModules(modules)
 	if err != nil {
-		return err
+		return &FileError{
+			Filepath: f.Filepath,
+			Modules:  modules,
+			Err:      err,
+		}
 	}
 
 	for _, submodule := range f.submodules() {
@@ -55,7 +94,11 @@ func (f *File) AddSubmoduleReplaces(modules ...string) error {
 
 		newPath := "." + string(os.PathSeparator) + name
 		if err := f.AddReplace(submodule.Mod.Path, "", newPath, ""); err != nil {
-			return err
+			return &FileError{
+				Err:      err,
+				Modules:  modules,
+				Filepath: f.Filepath,
+			}
 		}
 	}
 	return nil
@@ -64,12 +107,13 @@ func (f *File) AddSubmoduleReplaces(modules ...string) error {
 // RemoveSubmoduleReplaces removes all "replace" directives
 // related to the found submodules.
 func (f *File) RemoveSubmoduleReplaces(modules ...string) error {
-	if len(modules) == 0 {
-		modules = f.Submodules()
-	}
-	versions, err := parseModules(modules)
+	versions, err := f.parseModules(modules)
 	if err != nil {
-		return err
+		return &FileError{
+			Filepath: f.Filepath,
+			Modules:  modules,
+			Err:      err,
+		}
 	}
 
 	submodules := f.submodules()
@@ -81,20 +125,16 @@ func (f *File) RemoveSubmoduleReplaces(modules ...string) error {
 			// TODO: what about versions match?
 			if r.Old.Path == s.Mod.Path && strings.HasPrefix(r.New.Path, ".") {
 				if err := f.DropReplace(r.Old.Path, r.Old.Version); err != nil {
-					return err
+					return &FileError{
+						Err:      err,
+						Modules:  modules,
+						Filepath: f.Filepath,
+					}
 				}
 			}
 		}
 	}
 	return nil
-}
-
-// Submodules returns a list of submodule paths.
-func (f *File) Submodules() (result []string) {
-	for _, s := range f.submodules() {
-		result = append(result, s.Mod.Path)
-	}
-	return
 }
 
 // Format cleanups the parsed mod file and returns it as bytes.

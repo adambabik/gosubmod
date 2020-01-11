@@ -3,6 +3,14 @@ gosubmod
 
 gosubmod is a tool that simplifies working with Go submodules.
 
+```
+go install github.com/adambabik/gosubmod
+```
+
+## Learn more about submodules
+
+Submodules are tricky and you probably don't need them. However, in certain situation, they can be useful. [Learn more about submodules](https://github.com/go-modules-by-example/index/blob/master/009_submodules/README.md) before going further if the concept is unknown to you.
+
 ## Problem
 
 Developing and releasing nested Go Modules (submodules) is not trivial.

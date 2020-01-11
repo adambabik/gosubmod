@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"golang.org/x/mod/modfile"
+	"gotest.tools/assert"
 )
 
 var testModData = []byte(`module example.com/a
@@ -39,6 +40,17 @@ replace example.com/a/b => ./b
 replace example.com/a/c/v2 => ./c
 `)
 
+func TestFile_Submodules(t *testing.T) {
+	modFile, err := modfile.Parse("", testModDataWithoutReplaces, nil)
+	if err != nil {
+		t.Fatalf("failed to parse data: %v", err)
+	}
+
+	f := File{File: modFile}
+	submodules := f.Submodules()
+	assert.DeepEqual(t, []string{"example.com/a/b@v1.0.0", "example.com/a/c/v2@v2.0.0"}, submodules)
+}
+
 func TestFile_AddSubmoduleReplaces(t *testing.T) {
 	modFile, err := modfile.Parse("", testModDataWithoutReplaces, nil)
 	if err != nil {
@@ -47,17 +59,10 @@ func TestFile_AddSubmoduleReplaces(t *testing.T) {
 
 	f := File{File: modFile}
 	err = f.AddSubmoduleReplaces()
-	if err != nil {
-		t.Fatalf("failed to remove replaces: %v", err)
-	}
+	assert.NilError(t, err)
 	data, err := f.Format()
-	if err != nil {
-		t.Fatalf("failed to format mod file: %v", err)
-	}
-
-	if !bytes.Equal(testModDataWithReplaces, data) {
-		t.Fatalf("expected %s but got %s", testModDataWithReplaces, data)
-	}
+	assert.NilError(t, err)
+	assert.DeepEqual(t, testModDataWithReplaces, data)
 }
 
 func TestFile_AddSubmoduleReplacesWithModules(t *testing.T) {
