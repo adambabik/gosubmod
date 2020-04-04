@@ -7,6 +7,37 @@ gosubmod is a tool that simplifies working with Go submodules.
 go install github.com/adambabik/gosubmod
 ```
 
+## Usage
+
+Assume you have submodules `example.com/a/b` and `example.com/a/c`:
+
+```
+module example.com/a
+
+require (
+	example.com/a/b v1.0.0
+	example.com/a/c/v2 v2.0.0
+)
+```
+
+If you want to replace them with relative modules in order to speed up development process, execute `gosubmod add`. This will change the `go.mod` to:
+
+```
+module example.com/a
+
+require (
+	example.com/a/b v1.0.0
+	example.com/a/c/v2 v2.0.0
+)
+
+replace example.com/a/b => ./b
+replace example.com/a/c/v2 => ./c
+```
+
+You can also replace a single module using `gosubmod add example.com/a/b`.
+
+To get back to the original version run `gosubmodo remove`.
+
 ## Learn more about submodules
 
 Submodules are tricky and you probably don't need them. However, in certain situation, they can be useful. [Learn more about submodules](https://github.com/go-modules-by-example/index/blob/master/009_submodules/README.md) before going further if the concept is unknown to you.
