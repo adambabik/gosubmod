@@ -153,7 +153,7 @@ func (f *File) submodules() (result []*modfile.Require) {
 	return
 }
 
-func (f *File) submoduleDirName(submodule module.Version) string {
+func (f *File) submoduleDirName(submodule Version) string {
 	// Split prefix and major version. The major version is not
 	// a part of the directory name.
 	prefix, _, _ := module.SplitPathVersion(submodule.Path)
@@ -167,9 +167,9 @@ func isSubmodule(path, mainPath string) bool {
 	return strings.HasPrefix(path, mainPath)
 }
 
-type modVersions []module.Version
+type modVersions []Version
 
-func (mv modVersions) ContainsPath(version module.Version) bool {
+func (mv modVersions) ContainsPath(version Version) bool {
 	for _, v := range mv {
 		if v.Path == version.Path {
 			return true
@@ -179,14 +179,14 @@ func (mv modVersions) ContainsPath(version module.Version) bool {
 }
 
 func parseModules(modules []string) (modVersions, error) {
-	result := make([]module.Version, 0, len(modules))
+	result := make([]Version, 0, len(modules))
 	for _, path := range modules {
 		if err := module.CheckPath(path); err != nil {
 			return nil, err
 		}
 		// After module.CheckPath we know that module.SplitPathVersion will succeed.
 		prefix, version, _ := module.SplitPathVersion(path)
-		result = append(result, module.Version{
+		result = append(result, Version{
 			Path:    prefix + version, // join the prefix and version again to form a valid path
 			Version: module.CanonicalVersion(version),
 		})

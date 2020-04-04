@@ -16,28 +16,29 @@ var usage = `gosubmod is a tool that simplifies working with Go submodules.
 
 Usage:
 
-	gosubmod <command> [arguments] submodules
+	gosubmod <command> [arguments] submodules...
 
 The commands are:
 
 	list    list all the recognized submodules
 	add     add "replace" directives with relative paths for submodules
 	drop    drop "replace" directives with relative paths for submodules
+	bump    bump updates submodule versions; requires a semver part (-patch, -minor or -major) as an argument
 
 `
 
-type command func(*submod.File, []string) error
+type command func(*submod.File) error
 
 func main() {
 	var cmd command
 	// interpret provided arguments
 	if len(os.Args) >= 2 {
 		switch os.Args[1] {
-		case "list":
+		case "list", "l":
 			cmd = listCmd
-		case "add":
+		case "add", "a":
 			cmd = addCmd
-		case "drop":
+		case "drop", "d":
 			cmd = dropCmd
 		}
 	}
@@ -60,14 +61,7 @@ func main() {
 		Filepath: modFilePath,
 		Strict:   true,
 	}
-	// Execute the command with the submodules.
-	// If there are no submodules provided,
-	// select all detected ones.
-	var modules []string
-	if len(os.Args) > 2 {
-		modules = os.Args[2:]
-	}
-	if err := cmd(f, modules); err != nil {
+	if err := cmd(f); err != nil {
 		log.Fatalf("failed to execute command: %v", err)
 	}
 }
@@ -76,7 +70,7 @@ func usageCmd() {
 	fmt.Fprint(os.Stderr, usage)
 }
 
-func listCmd(f *submod.File, _ []string) error {
+func listCmd(f *submod.File) error {
 	submodules := f.Submodules()
 	w := bufio.NewWriter(os.Stdout)
 	for _, m := range submodules {
@@ -88,7 +82,11 @@ func listCmd(f *submod.File, _ []string) error {
 	return w.Flush()
 }
 
-func addCmd(f *submod.File, modules []string) error {
+func addCmd(f *submod.File) error {
+	var modules []string
+	if len(os.Args) > 2 {
+		modules = os.Args[2:]
+	}
 	err := f.AddSubmoduleReplaces(modules...)
 	if err != nil {
 		return err
@@ -96,7 +94,11 @@ func addCmd(f *submod.File, modules []string) error {
 	return writeModFile(f)
 }
 
-func dropCmd(f *submod.File, modules []string) error {
+func dropCmd(f *submod.File) error {
+	var modules []string
+	if len(os.Args) > 2 {
+		modules = os.Args[2:]
+	}
 	err := f.RemoveSubmoduleReplaces(modules...)
 	if err != nil {
 		return err
