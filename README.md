@@ -3,11 +3,27 @@ gosubmod
 
 gosubmod is a tool that simplifies working with Go submodules.
 
-```
-go install github.com/adambabik/gosubmod
+```shell script
+$ go install github.com/adambabik/gosubmod
 ```
 
 ## Usage
+
+```shell script
+$ gosubmod -h
+
+gosubmod is a tool that simplifies working with Go submodules.
+
+Usage:
+
+	gosubmod <command> [arguments] submodules...
+
+The commands are:
+
+	list    list all the recognized submodules
+	add     add "replace" directives with relative paths for submodules
+	drop    drop "replace" directives with relative paths for submodules
+```
 
 Assume you have submodules `example.com/a/b` and `example.com/a/c`:
 
