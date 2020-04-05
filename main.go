@@ -23,7 +23,6 @@ The commands are:
 	list    list all the recognized submodules
 	add     add "replace" directives with relative paths for submodules
 	drop    drop "replace" directives with relative paths for submodules
-	bump    bump updates submodule versions; requires a semver part (-patch, -minor or -major) as an argument
 
 `
 
